@@ -251,7 +251,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--min-size",
         dest="min_size",
-        default="50g",
+        default="100g",
         type=parse_size,
         help="Minimum directory size, e.g. 500g, 1.5tb (default: 10g)",
     )

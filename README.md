@@ -20,7 +20,7 @@ pip install --upgrade git+https://github.com/anttonalberdi/mjolnirscan.git
 
 ## Usage
 
-Scan the current directory with defaults (older than 180 days and at least 10 GiB):
+Scan the current directory with defaults (older than 60 days and at least 100 GiB):
 
 ```bash
 mjolnirscan
