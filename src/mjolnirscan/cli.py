@@ -244,14 +244,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--older-than",
         dest="older_than",
-        default="180d",
+        default="60d",
         type=parse_duration,
         help="Age threshold, e.g. 90d, 12w, 1y (default: 180d)",
     )
     parser.add_argument(
         "--min-size",
         dest="min_size",
-        default="10g",
+        default="50g",
         type=parse_size,
         help="Minimum directory size, e.g. 500g, 1.5tb (default: 10g)",
     )
