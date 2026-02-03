@@ -4,20 +4,6 @@ mjolnirscan is a fast, single-pass directory scanner for Unix systems. It finds 
 
 ## Install
 
-From the repo root:
-
-```bash
-pip install .
-```
-
-For editable installs during development:
-
-```bash
-pip install -e .
-```
-
-## Conda environment
-
 Create and activate a dedicated conda environment (uses `environment.yml`):
 
 ```bash
@@ -25,10 +11,11 @@ conda env create -f environment.yml
 conda activate mjolnirscan
 ```
 
-If you already have the environment and want to update it:
+To update the installed package from GitHub inside the conda environment:
 
 ```bash
-conda env update -f environment.yml --prune
+conda activate mjolnirscan
+pip install --upgrade git+https://github.com/anttonalberdi/mjolnirscan.git
 ```
 
 ## Usage

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
+import errno
 import os
 from pathlib import Path
 import time
@@ -203,6 +204,7 @@ def scan_directories_parallel(
     one_filesystem: bool = False,
     error_limit: int = 200,
 ) -> ScanReport:
+    _patch_multiprocessing_tempdir_cleanup()
     if workers <= 1:
         return scan_directories(
             root=root,
@@ -379,6 +381,31 @@ def scan_directories_parallel(
         stats=stats,
         root_summary=root_summary,
     )
+
+
+def _patch_multiprocessing_tempdir_cleanup() -> None:
+    try:
+        import multiprocessing.util as mp_util
+    except Exception:
+        return
+
+    if getattr(mp_util, "_mjolnirscan_patched", False):
+        return
+
+    orig = getattr(mp_util, "_remove_temp_dir", None)
+    if orig is None:
+        return
+
+    def _patched_remove_temp_dir(*args, **kwargs):
+        try:
+            return orig(*args, **kwargs)
+        except OSError as exc:
+            if exc.errno == errno.ENOTEMPTY:
+                return
+            raise
+
+    mp_util._remove_temp_dir = _patched_remove_temp_dir
+    mp_util._mjolnirscan_patched = True
 
 
 def select_top_level(candidates: Iterable[DirResult]) -> list[DirResult]:
