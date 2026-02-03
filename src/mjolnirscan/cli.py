@@ -9,7 +9,13 @@ import sys
 import time
 
 from . import __version__
-from .scanner import DirResult, ScanReport, scan_directories, select_top_level
+from .scanner import (
+    DirResult,
+    ScanReport,
+    scan_directories,
+    scan_directories_parallel,
+    select_top_level,
+)
 
 
 _DURATION_UNITS = {
@@ -108,6 +114,7 @@ def render_text(
     cutoff: float,
     min_size: int,
     elapsed: float,
+    verbose: int = 0,
 ) -> None:
     cutoff_date = format_timestamp(cutoff)
     print(
@@ -138,9 +145,9 @@ def render_text(
         )
         for err in report.errors:
             print(f"  - {err.path}: {err.message}")
-    if report.stats.skipped_symlinks:
+    if verbose or report.stats.skipped_symlinks:
         print(f"Skipped symlinks: {report.stats.skipped_symlinks}")
-    if report.stats.skipped_other_fs:
+    if verbose or report.stats.skipped_other_fs:
         print(f"Skipped other filesystems: {report.stats.skipped_other_fs}")
 
 
@@ -265,6 +272,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Follow symlinks (cycle detection enabled)",
     )
     parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of worker processes for parallel scan (default: 1)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity (use -vv for more detail)",
+    )
+    parser.add_argument(
         "--html",
         metavar="PATH",
         help="Write an HTML report to the given path",
@@ -302,14 +322,42 @@ def main(argv: list[str] | None = None) -> int:
     cutoff = now - args.older_than
 
     start = time.monotonic()
-    report = scan_directories(
-        root=root,
-        min_size=args.min_size,
-        cutoff=cutoff,
-        time_attr=time_attr,
-        follow_symlinks=args.follow_symlinks,
-        one_filesystem=args.one_filesystem,
-    )
+    if args.workers < 1:
+        print("Error: --workers must be >= 1", file=sys.stderr)
+        return 2
+
+    workers = args.workers
+    if workers > 1 and args.follow_symlinks:
+        print(
+            "Warning: --follow-symlinks disables parallel mode to avoid double counting.",
+            file=sys.stderr,
+        )
+        workers = 1
+
+    if args.verbose:
+        mode = "parallel" if workers > 1 else "single"
+        print(f"Scan root: {root}")
+        print(f"Mode: {mode} ({workers} worker{'s' if workers != 1 else ''})")
+
+    if workers > 1:
+        report = scan_directories_parallel(
+            root=root,
+            min_size=args.min_size,
+            cutoff=cutoff,
+            time_attr=time_attr,
+            workers=workers,
+            follow_symlinks=args.follow_symlinks,
+            one_filesystem=args.one_filesystem,
+        )
+    else:
+        report = scan_directories(
+            root=root,
+            min_size=args.min_size,
+            cutoff=cutoff,
+            time_attr=time_attr,
+            follow_symlinks=args.follow_symlinks,
+            one_filesystem=args.one_filesystem,
+        )
     elapsed = time.monotonic() - start
 
     results = select_top_level(report.candidates)
@@ -321,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         results.sort(key=lambda item: item.path)
 
-    render_text(results, report, cutoff, args.min_size, elapsed)
+    render_text(results, report, cutoff, args.min_size, elapsed, verbose=args.verbose)
 
     if args.html:
         try:

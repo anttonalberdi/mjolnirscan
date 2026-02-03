@@ -51,9 +51,22 @@ Generate an HTML report:
 mjolnirscan /data --older-than 90d --min-size 500g --html report.html
 ```
 
+Run in parallel across top-level directories:
+
+```bash
+mjolnirscan /data --workers 4
+```
+
+Increase verbosity (use `-vv` for more detail):
+
+```bash
+mjolnirscan /data -v
+```
+
 ## Notes
 
 - Recency defaults to `mtime` (last modification time). You can also use `atime` or `ctime` via `--time-basis`.
 - Many HPC filesystems disable `atime`, so `mtime` is usually more reliable.
 - The scanner uses a single pass with `os.scandir` for efficiency and avoids reporting subdirectories when a parent already matches the criteria.
+- Parallel mode (`--workers`) splits work across top-level directories; `--follow-symlinks` disables parallel mode to avoid double counting across symlinked trees.
 - Use `--one-filesystem` to stay on a single mount and `--follow-symlinks` if you want symlink traversal (cycle detection is enabled).
