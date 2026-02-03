@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mjolnirscan"
+version = "0.1.0"
+description = "Scan Unix directories for large, old data to reduce HPC storage costs."
+readme = "README.md"
+requires-python = ">=3.13"
+keywords = ["storage", "hpc", "filesystem", "cleanup", "audit"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: POSIX :: BSD",
+  "Operating System :: MacOS :: MacOS X",
+]
+dependencies = []
+
+[project.scripts]
+mjolnirscan = "mjolnirscan.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
